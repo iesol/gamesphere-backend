@@ -45,6 +45,9 @@ export class Match {
   @Column({ type: 'varchar', nullable: true })
   scoredBy: string | null;
 
+  @Column({ type: 'jsonb', default: {} })
+  details: Record<string, any>;
+
   @CreateDateColumn()
   createdAt: Date;
 

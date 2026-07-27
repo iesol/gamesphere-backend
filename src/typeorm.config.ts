@@ -2,7 +2,7 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { User } from './users/user.entity';
 import { OrganizationUser } from './users/organization-user.entity';
 import { Organization } from './organizations/organization.entity';
-import { GameType } from './game-types/game-type.entity';
+
 import { Venue } from './venues/venue.entity';
 import { Tournament } from './tournaments/tournament.entity';
 import { Team } from './tournaments/team.entity';
@@ -21,11 +21,11 @@ export function getTypeOrmConfig(): TypeOrmModuleOptions {
       type: 'sqlite',
       database: './data/gamesphere.db',
       entities: [
-        User, OrganizationUser, Organization, GameType, Venue,
-        Tournament, Team, TeamMember, Match,
-        CricketMatchState, CricketBallEvent,
-        ChessMatchState, ChessMoveEvent,
-        FormConfig,
+        User, OrganizationUser, Organization, Venue,
+      Tournament, Team, TeamMember, Match,
+      CricketMatchState, CricketBallEvent,
+      ChessMatchState, ChessMoveEvent,
+      FormConfig,
       ],
       synchronize: true,
     };
@@ -39,7 +39,7 @@ export function getTypeOrmConfig(): TypeOrmModuleOptions {
     password: config.db.password,
     database: config.db.database,
     entities: [
-      User, OrganizationUser, Organization, GameType, Venue,
+      User, OrganizationUser, Organization, Venue,
       Tournament, Team, TeamMember, Match,
       CricketMatchState, CricketBallEvent,
       ChessMatchState, ChessMoveEvent,

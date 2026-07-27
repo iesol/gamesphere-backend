@@ -14,6 +14,9 @@ export class Organization {
   @Column({ type: 'simple-json', default: '{}' })
   settings: Record<string, any>;
 
+  @Column({ type: 'jsonb', default: {} })
+  details: Record<string, any>;
+
   @CreateDateColumn()
   createdAt: Date;
 

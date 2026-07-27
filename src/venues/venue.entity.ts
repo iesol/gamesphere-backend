@@ -20,6 +20,9 @@ export class Venue {
   @Column({ type: 'simple-json', default: '{}' })
   facilities: Record<string, any>;
 
+  @Column({ type: 'jsonb', default: {} })
+  details: Record<string, any>;
+
   @CreateDateColumn()
   createdAt: Date;
 

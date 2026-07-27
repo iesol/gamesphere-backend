@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { FormConfig } from './form-config.entity';
 
 const GLOBAL_SEED_CONFIGS = [
@@ -32,7 +32,12 @@ const GLOBAL_SEED_CONFIGS = [
       { key: 'name', label: 'Tournament Name', type: 'text', required: true },
       { key: 'sportType', label: 'Sport Type', type: 'select', required: true, options: [
         { label: 'Cricket', value: 'cricket' },
+        { label: 'Football', value: 'football' },
+        { label: 'Basketball', value: 'basketball' },
         { label: 'Chess', value: 'chess' },
+        { label: 'Badminton', value: 'badminton' },
+        { label: 'Tennis', value: 'tennis' },
+        { label: 'Volleyball', value: 'volleyball' },
         { label: 'Other', value: 'other' },
       ]},
       { key: 'format', label: 'Format', type: 'select', required: true, options: [
@@ -41,6 +46,9 @@ const GLOBAL_SEED_CONFIGS = [
         { label: 'Round Robin', value: 'round_robin' },
         { label: 'League', value: 'league' },
       ]},
+      { key: 'startDate', label: 'Start Date & Time', type: 'date', required: false },
+      { key: 'venueAddress', label: 'Venue / Address', type: 'text', required: false },
+      { key: 'maxParticipants', label: 'Max Participants', type: 'number', required: false, defaultValue: 200 },
     ],
   },
   {
@@ -91,6 +99,7 @@ const GLOBAL_SEED_CONFIGS = [
     fields: [
       { key: 'homeTeamId', label: 'Home Team', type: 'select', required: true, options: [] },
       { key: 'awayTeamId', label: 'Away Team', type: 'select', required: true, options: [] },
+      { key: 'round', label: 'Round', type: 'number', required: false, defaultValue: 1 },
       { key: 'scheduledAt', label: 'Scheduled At', type: 'date', required: false },
     ],
   },
@@ -104,7 +113,7 @@ export class FormConfigsService implements OnApplicationBootstrap {
 
   async onApplicationBootstrap() {
     for (const cfg of GLOBAL_SEED_CONFIGS) {
-      const existing = await this.repo.findOne({ where: { slug: cfg.slug, orgId: null as any } });
+      const existing = await this.repo.findOne({ where: { slug: cfg.slug, orgId: IsNull() } });
       if (!existing) {
         await this.repo.save(this.repo.create(cfg));
       }
@@ -116,7 +125,7 @@ export class FormConfigsService implements OnApplicationBootstrap {
   }
 
   async findAll(orgId?: string) {
-    const where: any[] = [{ orgId: null as any }];
+    const where: any[] = [{ orgId: IsNull() }];
     if (orgId) where.push({ orgId });
     return this.repo.find({ where, order: { createdAt: 'DESC' } });
   }
@@ -126,7 +135,7 @@ export class FormConfigsService implements OnApplicationBootstrap {
       const orgCfg = await this.repo.findOne({ where: { slug, orgId } });
       if (orgCfg) return orgCfg;
     }
-    const config = await this.repo.findOne({ where: { slug, orgId: null as any } });
+    const config = await this.repo.findOne({ where: { slug, orgId: IsNull() } });
     if (!config) throw new NotFoundException(`Form config '${slug}' not found`);
     return config;
   }
@@ -134,7 +143,7 @@ export class FormConfigsService implements OnApplicationBootstrap {
   async update(slug: string, data: { name?: string; fields?: any[]; orgId?: string }) {
     const where: any = { slug };
     if (data.orgId) where.orgId = data.orgId;
-    else where.orgId = null as any;
+    else where.orgId = IsNull();
     const config = await this.repo.findOne({ where });
     if (!config) throw new NotFoundException(`Form config '${slug}' not found`);
     if (data.name !== undefined) config.name = data.name;
@@ -145,7 +154,7 @@ export class FormConfigsService implements OnApplicationBootstrap {
   async delete(slug: string, orgId?: string) {
     const where: any = { slug };
     if (orgId) where.orgId = orgId;
-    else where.orgId = null as any;
+    else where.orgId = IsNull();
     const config = await this.repo.findOne({ where });
     if (!config) throw new NotFoundException(`Form config '${slug}' not found`);
     return this.repo.remove(config);

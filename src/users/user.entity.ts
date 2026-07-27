@@ -20,6 +20,9 @@ export class User {
   @Column({ type: 'simple-json', default: '{}' })
   gameProfiles: Record<string, any>;
 
+  @Column({ type: 'jsonb', default: {} })
+  details: Record<string, any>;
+
   @CreateDateColumn()
   createdAt: Date;
 

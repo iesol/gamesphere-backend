@@ -16,6 +16,7 @@ export class OrganizationUser {
   @Column() userId: string;
   @Column() orgId: string;
   @Column({ type: 'simple-json', default: '[]' }) roles: string[];
+  @Column({ type: 'jsonb', default: {} }) details: Record<string, any>;
   @ManyToOne(() => User, { onDelete: 'CASCADE' }) @JoinColumn({ name: 'userId' }) user: User;
   @ManyToOne(() => Organization, { onDelete: 'CASCADE' }) @JoinColumn({ name: 'orgId' }) organization: Organization;
   @CreateDateColumn() createdAt: Date;

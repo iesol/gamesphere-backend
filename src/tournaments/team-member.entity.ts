@@ -11,6 +11,9 @@ export class TeamMember {
   @Column()
   userId: string;
 
+  @Column({ type: 'jsonb', default: {} })
+  details: Record<string, any>;
+
   @CreateDateColumn()
   createdAt: Date;
 }

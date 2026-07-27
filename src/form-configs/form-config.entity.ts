@@ -8,6 +8,7 @@ export class FormConfig {
   @Column({ nullable: true }) orgId: string;
   @Column() name: string;
   @Column({ type: 'simple-json', default: '[]' }) fields: any[];
+  @Column({ type: 'jsonb', default: {} }) details: Record<string, any>;
   @CreateDateColumn() createdAt: Date;
   @UpdateDateColumn() updatedAt: Date;
 }

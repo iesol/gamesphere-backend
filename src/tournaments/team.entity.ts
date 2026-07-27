@@ -20,6 +20,9 @@ export class Team {
   @Column({ type: 'varchar', length: 50, default: 'registered' })
   status: string;
 
+  @Column({ type: 'jsonb', default: {} })
+  details: Record<string, any>;
+
   @CreateDateColumn()
   createdAt: Date;
 }

@@ -18,9 +18,6 @@ export class Tournament {
   @Column({ length: 255 })
   name: string;
 
-  @Column({ nullable: true })
-  gameTypeId: string;
-
   @Column({ type: 'varchar', length: 50, default: 'cricket' })
   sportType: string;
 
@@ -44,6 +41,9 @@ export class Tournament {
 
   @Column({ type: 'simple-json', default: '{}' })
   settings: Record<string, any>;
+
+  @Column({ type: 'jsonb', default: {} })
+  details: Record<string, any>;
 
   @CreateDateColumn()
   createdAt: Date;
