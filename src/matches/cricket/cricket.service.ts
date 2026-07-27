@@ -132,7 +132,7 @@ export class CricketService {
     const eventData: any = { ...data, matchId, innings: state.innings, overNumber, ballNumber, strikerId: cbFinal?.strikerId ?? null, nonStrikerId: cbFinal?.nonStrikerId ?? null };
     const event = this.eventRepo.create(eventData);
     const saved = await this.eventRepo.save(event);
-    this.sse.emit(matchId, { type: 'ball', data: { runsScored: data.runsScored, overNumber, ballNumber, wickets: state.wickets, strikerId: cbFinal?.strikerId ?? null, nonStrikerId: cbFinal?.nonStrikerId ?? null }, timestamp: Date.now() });
+    this.sse.emit(matchId, { type: 'ball', data: { runsScored: data.runsScored, overNumber, ballNumber, wickets: state.wickets, strikerId: cbFinal?.strikerId ?? null, nonStrikerId: cbFinal?.nonStrikerId ?? null, extrasType: data.extrasType, wicketType: data.wicketType }, timestamp: Date.now() });
     return saved;
   }
 
@@ -201,7 +201,7 @@ export class CricketService {
     await this.eventRepo.save(event);
     await this.recalculateState(event.matchId);
     const updatedState = await this.stateRepo.findOne({ where: { matchId: event.matchId } });
-    this.sse.emit(event.matchId, { type: 'ball', data: { runsScored: event.runsScored, overNumber: event.overNumber, ballNumber: event.ballNumber, wickets: updatedState?.wickets ?? 0, strikerId: (updatedState?.currentBatsmen as any)?.strikerId ?? null, nonStrikerId: (updatedState?.currentBatsmen as any)?.nonStrikerId ?? null, totalRuns: updatedState?.totalRuns } as any, timestamp: Date.now() });
+    this.sse.emit(event.matchId, { type: 'ball', data: { runsScored: event.runsScored, overNumber: event.overNumber, ballNumber: event.ballNumber, wickets: updatedState?.wickets ?? 0, strikerId: (updatedState?.currentBatsmen as any)?.strikerId ?? null, nonStrikerId: (updatedState?.currentBatsmen as any)?.nonStrikerId ?? null, totalRuns: updatedState?.totalRuns, extrasType: event.extrasType, wicketType: event.wicketType } as any, timestamp: Date.now() });
     if (userId) {
       await this.auditRepo.save(this.auditRepo.create({
         matchId: event.matchId, eventId, action: 'edit_ball',
