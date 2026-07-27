@@ -25,8 +25,8 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   async myOrgRole(@CurrentUser() user: { id: string }, @CurrentTenant() orgId: string) {
     const membership = await this.usersService.findOrgUser(user.id, orgId);
-    if (!membership) return { roles: [] };
-    return { roles: membership.roles };
+    if (!membership) return { roles: [], userId: user.id };
+    return { roles: membership.roles, userId: user.id };
   }
 
   @Post()

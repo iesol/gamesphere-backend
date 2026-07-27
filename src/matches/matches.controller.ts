@@ -45,11 +45,24 @@ export class MatchesController {
   @UseGuards(JwtAuthGuard)
   async lock(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: { id: string }) {
     const match = await this.service.findById(id);
-    if (match.scoredBy && match.scoredBy !== user.id) {
+    const stale = match.lockedAt && Date.now() - new Date(match.lockedAt).getTime() > 60000;
+    if (match.scoredBy && match.scoredBy !== user.id && !stale) {
       throw new ForbiddenException('Match is already being scored by another user');
     }
     match.scoredBy = user.id;
+    match.lockedAt = new Date();
     return this.service.updateMatch(match);
+  }
+
+  @Post(':id/lock/heartbeat')
+  @UseGuards(JwtAuthGuard)
+  async heartbeat(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: { id: string }) {
+    const match = await this.service.findById(id);
+    if (match.scoredBy === user.id) {
+      match.lockedAt = new Date();
+      await this.service.updateMatch(match);
+    }
+    return { ok: true };
   }
 
   @Delete(':id/lock')
@@ -58,6 +71,7 @@ export class MatchesController {
     const match = await this.service.findById(id);
     if (match.scoredBy === user.id) {
       match.scoredBy = null;
+      match.lockedAt = null;
       return this.service.updateMatch(match);
     }
     return match;

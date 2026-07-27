@@ -44,8 +44,14 @@ export class CricketService {
     extrasType: string; wicketType: string; wicketPlayerId?: string; volunteerId: string;
   }) {
     const match = await this.matchRepo.findOne({ where: { id: matchId } });
-    if (match && match.scoredBy && match.scoredBy !== data.volunteerId) {
+    const stale = match?.lockedAt && Date.now() - new Date(match.lockedAt).getTime() > 60000;
+    if (match && match.scoredBy && match.scoredBy !== data.volunteerId && !stale) {
       throw new ForbiddenException('Match is being scored by another user');
+    }
+    if (stale) {
+      match.scoredBy = null;
+      match.lockedAt = null;
+      await this.matchRepo.save(match);
     }
     const state = await this.stateRepo.findOne({ where: { matchId } });
     if (!state) throw new ForbiddenException('Match not started');
