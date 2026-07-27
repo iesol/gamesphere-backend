@@ -92,7 +92,7 @@ export class TournamentsService {
     const content = fileBuffer.toString('utf-8');
     const records = parse(content, { columns: true, skip_empty_lines: true });
 
-    const players = tournament.settings?.players || [];
+    const players: any[] = [];
     let imported = 0;
 
     for (const row of records) {
@@ -102,11 +102,14 @@ export class TournamentsService {
         user = this.userRepo.create({ email: row.email, name: row.name, gameProfiles: { [tournament.sportType]: { position: row.position || null, level: row.skill_level || null } } });
         await this.userRepo.save(user);
         await this.orgUserRepo.save(this.orgUserRepo.create({ userId: user.id, orgId, roles: ['player'] }));
+      } else if (tournament.sportType && row.position) {
+        const profiles = user.gameProfiles || {};
+        profiles[tournament.sportType] = { position: row.position, level: row.skill_level || profiles[tournament.sportType]?.level || null };
+        user.gameProfiles = profiles;
+        await this.userRepo.save(user);
       }
-      if (!players.find((p: any) => p.email === row.email)) {
-        players.push({ userId: user.id, name: row.name, email: row.email, position: row.position || '', skillLevel: parseInt(row.skill_level) || 3 });
-        imported++;
-      }
+      players.push({ userId: user.id, name: row.name, email: row.email, position: row.position || '', skillLevel: parseInt(row.skill_level) || 3 });
+      imported++;
     }
 
     tournament.settings = { ...tournament.settings, players };

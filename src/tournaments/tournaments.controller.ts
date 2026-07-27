@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Patch, Delete, Param, ParseUUIDPipe, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, ParseUUIDPipe, Body, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { TournamentsService } from './tournaments.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../common/roles.guard';
@@ -60,6 +61,18 @@ export class TournamentsController {
   @Roles(OrgRole.ORG_ADMIN, OrgRole.SUPER_ADMIN)
   async autoGenerateTeams(@Param('id', ParseUUIDPipe) id: string, @Body() body: { teamCount: number }) {
     return this.service.autoGenerateTeams(id, body.teamCount);
+  }
+
+  @Post(':id/import-players')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(OrgRole.ORG_ADMIN, OrgRole.SUPER_ADMIN)
+  @UseInterceptors(FileInterceptor('file'))
+  async importPlayers(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentTenant() orgId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.service.importPlayers(id, orgId, file.buffer);
   }
 }
 
