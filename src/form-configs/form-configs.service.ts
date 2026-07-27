@@ -125,9 +125,11 @@ export class FormConfigsService implements OnApplicationBootstrap {
   }
 
   async findAll(orgId?: string) {
-    const where: any[] = [{ orgId: IsNull() }];
-    if (orgId) where.push({ orgId });
-    return this.repo.find({ where, order: { createdAt: 'DESC' } });
+    const globals = await this.repo.find({ where: { orgId: IsNull() }, order: { createdAt: 'DESC' } });
+    if (!orgId) return globals;
+    const orgConfigs = await this.repo.find({ where: { orgId }, order: { createdAt: 'DESC' } });
+    const orgSlugs = new Set(orgConfigs.map(c => c.slug));
+    return [...orgConfigs, ...globals.filter(g => !orgSlugs.has(g.slug))];
   }
 
   async findBySlug(slug: string, orgId?: string) {
