@@ -5,10 +5,14 @@ import { RolesGuard, Roles } from '../common/roles.guard';
 import { OrgRole } from '../users/organization-user.entity';
 import { CurrentTenant } from '../common/current-tenant.decorator';
 import { CurrentUser } from '../common/current-user.decorator';
+import { SseService } from '../sse/sse.service';
 
 @Controller('matches')
 export class MatchesController {
-  constructor(private service: MatchesService) {}
+  constructor(
+    private service: MatchesService,
+    private sse: SseService,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -51,7 +55,9 @@ export class MatchesController {
     }
     match.scoredBy = user.id;
     match.lockedAt = new Date();
-    return this.service.updateMatch(match);
+    const saved = await this.service.updateMatch(match);
+    this.sse.emit(id, { type: 'score_lock', data: { scoredBy: user.id }, timestamp: Date.now() });
+    return saved;
   }
 
   @Post(':id/lock/heartbeat')
@@ -72,7 +78,9 @@ export class MatchesController {
     if (match.scoredBy === user.id) {
       match.scoredBy = null;
       match.lockedAt = null;
-      return this.service.updateMatch(match);
+      const saved = await this.service.updateMatch(match);
+      this.sse.emit(id, { type: 'score_unlock', data: { scoredBy: user.id }, timestamp: Date.now() });
+      return saved;
     }
     return match;
   }
