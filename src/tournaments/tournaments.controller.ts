@@ -5,8 +5,11 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../common/roles.guard';
 import { OrgRole } from '../users/organization-user.entity';
 import { CurrentTenant } from '../common/current-tenant.decorator';
+import { IsNotEmpty, IsUUID } from 'class-validator';
 
 class AddTeamMemberDto {
+  @IsNotEmpty()
+  @IsUUID()
   userId: string;
 }
 
