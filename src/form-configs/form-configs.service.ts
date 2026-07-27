@@ -144,7 +144,20 @@ export class FormConfigsService implements OnApplicationBootstrap {
     const where: any = { slug };
     if (data.orgId) where.orgId = data.orgId;
     else where.orgId = IsNull();
-    const config = await this.repo.findOne({ where });
+    let config = await this.repo.findOne({ where });
+    if (!config && data.orgId) {
+      const globalConfig = await this.repo.findOne({ where: { slug, orgId: IsNull() } });
+      if (globalConfig) {
+        config = this.repo.create({
+          slug,
+          orgId: data.orgId,
+          name: data.name ?? globalConfig.name,
+          fields: data.fields ?? globalConfig.fields,
+          details: globalConfig.details,
+        });
+        return this.repo.save(config);
+      }
+    }
     if (!config) throw new NotFoundException(`Form config '${slug}' not found`);
     if (data.name !== undefined) config.name = data.name;
     if (data.fields !== undefined) config.fields = data.fields;
