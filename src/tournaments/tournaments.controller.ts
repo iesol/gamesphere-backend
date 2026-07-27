@@ -1,10 +1,14 @@
-import { Controller, Get, Post, Patch, Delete, Param, ParseUUIDPipe, Body, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, ParseUUIDPipe, Body, UseGuards, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TournamentsService } from './tournaments.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../common/roles.guard';
 import { OrgRole } from '../users/organization-user.entity';
 import { CurrentTenant } from '../common/current-tenant.decorator';
+
+class AddTeamMemberDto {
+  userId: string;
+}
 
 @Controller('tournaments')
 export class TournamentsController {
@@ -90,7 +94,8 @@ export class TeamsController {
   @Post(':id/members')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(OrgRole.ORG_ADMIN, OrgRole.SUPER_ADMIN)
-  async addMember(@Param('id', ParseUUIDPipe) id: string, @Body() body: { userId: string }) {
+  async addMember(@Param('id', ParseUUIDPipe) id: string, @Body() body: AddTeamMemberDto) {
+    if (!body.userId) throw new BadRequestException('userId is required');
     return this.service.addTeamMember(id, body.userId);
   }
 
