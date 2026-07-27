@@ -5,6 +5,7 @@ import { getTypeOrmConfig } from './typeorm.config';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { OrganizationsModule } from './organizations/organizations.module';
+import { GameTypesModule } from './game-types/game-types.module';
 import { VenuesModule } from './venues/venues.module';
 import { TournamentsModule } from './tournaments/tournaments.module';
 import { MatchesModule } from './matches/matches.module';
@@ -24,6 +25,7 @@ import { TenantMiddleware } from './common/tenant.middleware';
     AuthModule,
     UsersModule,
     OrganizationsModule,
+    GameTypesModule,
     VenuesModule,
     TournamentsModule,
     MatchesModule,
