@@ -45,7 +45,7 @@ export class Match {
   @Column({ type: 'varchar', nullable: true })
   scoredBy: string | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   lockedAt: Date | null;
 
   @Column({ type: 'jsonb', default: {} })
