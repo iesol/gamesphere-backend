@@ -10,4 +10,6 @@ export const config = {
   jwtSecret: process.env.JWT_SECRET || 'dev-secret-change-in-production',
   googleClientId: process.env.GOOGLE_CLIENT_ID || '',
   initialSuperadminEmail: process.env.INITIAL_SUPERADMIN_EMAIL,
+  clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+  port: process.env.PORT || 3000,
 };
