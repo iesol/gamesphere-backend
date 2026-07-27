@@ -23,14 +23,31 @@ export class SseController {
     res.flushHeaders();
 
     const subject = this.sseService.getSubject(matchId);
-    const subscription = subject.subscribe((event) => {
-      res.write(`event: ${event.type}\ndata: ${JSON.stringify(event.data)}\n\n`);
+    const subscription = subject.subscribe({
+      next: (event) => {
+        try {
+          if (!res.destroyed) {
+            res.write(`event: ${event.type}\ndata: ${JSON.stringify(event.data)}\n\n`);
+          }
+        } catch {
+          subscription.unsubscribe();
+          clearInterval(heartbeat);
+        }
+      },
+      error: () => {},
     });
 
     res.write(`event: connected\ndata: {}\n\n`);
 
     const heartbeat = setInterval(() => {
-      res.write(`event: heartbeat\ndata: {}\n\n`);
+      try {
+        if (!res.destroyed) {
+          res.write(`event: heartbeat\ndata: {}\n\n`);
+        }
+      } catch {
+        subscription.unsubscribe();
+        clearInterval(heartbeat);
+      }
     }, 30000);
 
     const request = res.req as Request;

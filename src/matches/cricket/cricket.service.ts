@@ -34,6 +34,7 @@ export class CricketService {
       }
     }
     const saved = await this.stateRepo.save(state);
+    this.sse.emit(matchId, { type: 'ball', data: { runsScored: 0, overNumber: 0, ballNumber: 0, wickets: 0, strikerId: null, nonStrikerId: null, totalRuns: 0 }, timestamp: Date.now() });
     this.sse.emit(matchId, { type: 'match_start', data: { toss }, timestamp: Date.now() });
     return saved;
   }
@@ -125,12 +126,13 @@ export class CricketService {
     }
 
     state.extras = { ...(state.extras as any), batsmenStats: stats } as any;
+    const cbFinal = state.currentBatsmen as any;
     await this.stateRepo.save(state);
 
-    const eventData: any = { ...data, matchId, innings: state.innings, overNumber, ballNumber, strikerId, nonStrikerId };
+    const eventData: any = { ...data, matchId, innings: state.innings, overNumber, ballNumber, strikerId: cbFinal?.strikerId ?? null, nonStrikerId: cbFinal?.nonStrikerId ?? null };
     const event = this.eventRepo.create(eventData);
     const saved = await this.eventRepo.save(event);
-    this.sse.emit(matchId, { type: 'ball', data: { runsScored: data.runsScored, overNumber, ballNumber, wickets: state.wickets, strikerId, nonStrikerId }, timestamp: Date.now() });
+    this.sse.emit(matchId, { type: 'ball', data: { runsScored: data.runsScored, overNumber, ballNumber, wickets: state.wickets, strikerId: cbFinal?.strikerId ?? null, nonStrikerId: cbFinal?.nonStrikerId ?? null }, timestamp: Date.now() });
     return saved;
   }
 
@@ -160,6 +162,7 @@ export class CricketService {
       }
       await this.matchRepo.save(match);
       await this.stateRepo.remove(state);
+      this.sse.emit(matchId, { type: 'ball', data: { runsScored: 0, overNumber: inningsScore.overs, ballNumber: 0, wickets: inningsScore.wickets, strikerId: null, nonStrikerId: null, totalRuns: inningsScore.runs }, timestamp: Date.now() });
       this.sse.emit(matchId, { type: 'match_end', data: { result: match.result }, timestamp: Date.now() });
       return { done: true };
     }
@@ -175,6 +178,7 @@ export class CricketService {
     state.currentBatsmen = {} as any;
     state.extras = {} as any;
     await this.stateRepo.save(state);
+    this.sse.emit(matchId, { type: 'ball', data: { runsScored: 0, overNumber: 0, ballNumber: 0, wickets: 0, strikerId: null, nonStrikerId: null, totalRuns: 0 }, timestamp: Date.now() });
     this.sse.emit(matchId, { type: 'innings_end', data: { innings: inningsScore.innings, score: inningsScore }, timestamp: Date.now() });
     return state;
   }
@@ -196,7 +200,8 @@ export class CricketService {
     if (data.wicketType !== undefined) event.wicketType = data.wicketType;
     await this.eventRepo.save(event);
     await this.recalculateState(event.matchId);
-    this.sse.emit(event.matchId, { type: 'ball', data: { runsScored: data.runsScored }, timestamp: Date.now() });
+    const updatedState = await this.stateRepo.findOne({ where: { matchId: event.matchId } });
+    this.sse.emit(event.matchId, { type: 'ball', data: { runsScored: event.runsScored, overNumber: event.overNumber, ballNumber: event.ballNumber, wickets: updatedState?.wickets ?? 0, strikerId: (updatedState?.currentBatsmen as any)?.strikerId ?? null, nonStrikerId: (updatedState?.currentBatsmen as any)?.nonStrikerId ?? null, totalRuns: updatedState?.totalRuns } as any, timestamp: Date.now() });
     if (userId) {
       await this.auditRepo.save(this.auditRepo.create({
         matchId: event.matchId, eventId, action: 'edit_ball',
@@ -219,6 +224,7 @@ export class CricketService {
       state.currentBall = Math.round((data.oversBowled % 1) * 10);
     }
     await this.stateRepo.save(state);
+    this.sse.emit(matchId, { type: 'ball', data: { runsScored: 0, overNumber: state.currentOver, ballNumber: state.currentBall, wickets: state.wickets, strikerId: (state.currentBatsmen as any)?.strikerId ?? null, nonStrikerId: (state.currentBatsmen as any)?.nonStrikerId ?? null, totalRuns: state.totalRuns }, timestamp: Date.now() });
     this.sse.emit(matchId, { type: 'state_update', data: { totalRuns: state.totalRuns, wickets: state.wickets, oversBowled: state.oversBowled }, timestamp: Date.now() });
     if (userId) {
       await this.auditRepo.save(this.auditRepo.create({

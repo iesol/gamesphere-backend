@@ -20,6 +20,11 @@ export class SseService {
 
   emit(matchId: string, event: SseEvent) {
     const subject = this.subjects.get(matchId);
-    if (subject) subject.next(event);
+    if (subject) {
+      try {
+        subject.next(event);
+      } catch {
+      }
+    }
   }
 }
