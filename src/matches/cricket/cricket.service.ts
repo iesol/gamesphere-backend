@@ -33,7 +33,9 @@ export class CricketService {
         await this.matchRepo.save(match);
       }
     }
-    return this.stateRepo.save(state);
+    const saved = await this.stateRepo.save(state);
+    this.sse.emit(matchId, { type: 'match_start', data: { toss }, timestamp: Date.now() });
+    return saved;
   }
 
   async logBall(matchId: string, data: {
@@ -158,6 +160,7 @@ export class CricketService {
       }
       await this.matchRepo.save(match);
       await this.stateRepo.remove(state);
+      this.sse.emit(matchId, { type: 'match_end', data: { result: match.result }, timestamp: Date.now() });
       return { done: true };
     }
 
@@ -172,6 +175,7 @@ export class CricketService {
     state.currentBatsmen = {} as any;
     state.extras = {} as any;
     await this.stateRepo.save(state);
+    this.sse.emit(matchId, { type: 'innings_end', data: { innings: inningsScore.innings, score: inningsScore }, timestamp: Date.now() });
     return state;
   }
 
@@ -215,6 +219,7 @@ export class CricketService {
       state.currentBall = Math.round((data.oversBowled % 1) * 10);
     }
     await this.stateRepo.save(state);
+    this.sse.emit(matchId, { type: 'state_update', data: { totalRuns: state.totalRuns, wickets: state.wickets, oversBowled: state.oversBowled }, timestamp: Date.now() });
     if (userId) {
       await this.auditRepo.save(this.auditRepo.create({
         matchId, action: 'adjust_score',
