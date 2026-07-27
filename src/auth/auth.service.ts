@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, OnApplicationBootstrap, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { GoogleService } from './google.service';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,7 +9,7 @@ import { Organization } from '../organizations/organization.entity';
 import { config } from '../config';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnApplicationBootstrap {
   constructor(
     private googleService: GoogleService,
     private jwtService: JwtService,
@@ -20,12 +20,14 @@ export class AuthService {
 
   async loginWithGoogle(credential: string) {
     const googlePayload = await this.googleService.verifyToken(credential);
-    const { email, name, picture, sub: googleId } = googlePayload;
+    const { email: rawEmail, name, picture, sub: googleId } = googlePayload;
+    const email = rawEmail?.toLowerCase() ?? '';
+    if (!email) throw new UnauthorizedException('Email not provided by Google');
 
     let user = await this.userRepo.findOne({ where: { email } });
+    const isFirstSuperAdmin = !user && this.isInitialSuperadminEmail(email);
     if (!user) {
-      const initialAdminEmail = config.initialSuperadminEmail;
-      if (initialAdminEmail && email === initialAdminEmail) {
+      if (isFirstSuperAdmin) {
         user = this.userRepo.create({ email, name: name ?? '', googleId, pictureUrl: picture ?? '' });
         user = await this.userRepo.save(user);
       } else {
@@ -64,6 +66,37 @@ export class AuthService {
         roles: m.roles,
       })),
     };
+  }
+
+  private isInitialSuperadminEmail(email: string): boolean {
+    const configured = config.initialSuperadminEmail;
+    if (!configured) return false;
+    return email === configured.trim().toLowerCase();
+  }
+
+  async onApplicationBootstrap() {
+    await this.seedInitialSuperadmin();
+  }
+
+  private async seedInitialSuperadmin() {
+    const email = config.initialSuperadminEmail?.trim().toLowerCase();
+    if (!email) return;
+
+    const exists = await this.userRepo.findOne({ where: { email } });
+    if (exists) return;
+
+    const user = this.userRepo.create({ email, name: email.split('@')[0] });
+    await this.userRepo.save(user);
+
+    const orgCount = await this.orgRepo.count();
+    if (orgCount === 0) {
+      const slug = email.split('@')[0].replace(/[^a-z0-9-]/g, '-') + '-org';
+      const org = this.orgRepo.create({ name: 'My Organization', slug });
+      await this.orgRepo.save(org);
+      await this.orgUserRepo.save(
+        this.orgUserRepo.create({ userId: user.id, orgId: org.id, roles: [OrgRole.SUPER_ADMIN] }),
+      );
+    }
   }
 
   async getMe(userId: string) {
