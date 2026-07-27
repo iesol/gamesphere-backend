@@ -14,7 +14,8 @@ async function bootstrap() {
     origin: origins,
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-org-id'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-org-id', 'Cache-Control', 'Connection'],
+    exposedHeaders: ['Content-Type', 'Cache-Control', 'Connection'],
   });
 
   app.use(helmet());
