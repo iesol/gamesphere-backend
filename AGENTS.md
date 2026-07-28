@@ -47,5 +47,45 @@ NestJS backend for GameSphere, a multi-tenant tournament management system with 
 - `/cricket/{matchId}/events` — Get ball events
 - `/cricket/events/{eventId}` — Update a ball event
 
+## Chess Module
+- Chess match state tracking (`chess-match-state.entity.ts`)
+- Move event logging (`chess-move-event.entity.ts`)
+- Full chess game controller/service (`chess.controller.ts`, `chess.service.ts`)
+
+## Scripts & Tooling
+| Script | Command |
+|---|---|
+| `start:dev` | `nest start --watch` |
+| `build` | `nest build` |
+| `start` | `node dist/main` |
+| `test` | `jest` |
+
+- **Testing**: Jest + Supertest (`@nestjs/testing`) — run with `npm test`
+- **Linting**: Not configured
+- **Typechecking**: No dedicated script; type errors surface during `npm run build`
+- **Database**: `synchronize: true` in TypeORM (dev mode; prod should use migrations)
+
+## Environment Variables
+| Variable | Default | Purpose |
+|---|---|---|
+| `USE_SQLITE` | `false` | Toggle SQLite vs PostgreSQL |
+| `DB_HOST` | `localhost` | PostgreSQL host |
+| `DB_PORT` | `5432` | PostgreSQL port |
+| `DB_USERNAME` | `postgres` | Database user |
+| `DB_PASSWORD` | `postgres` | Database password |
+| `DB_DATABASE` | `gamesphere` | Database name |
+| `JWT_SECRET` | `dev-secret-change-in-production` | JWT signing secret |
+| `GOOGLE_CLIENT_ID` | `""` | Google OAuth client ID |
+| `INITIAL_SUPERADMIN_EMAIL` | (undefined) | Bootstrap superadmin email |
+| `CLIENT_ORIGIN` | `http://localhost:5173` | CORS allowed origins (comma-separated) |
+| `PORT` | `3000` | HTTP listen port |
+
+## Additional
+- **Rate limiting**: 100 req / 60s via `@nestjs/throttler`
+- **CORS**: Configurable via `CLIENT_ORIGIN`; allows GET, POST, PATCH, DELETE, OPTIONS
+- **File upload**: Multer for CSV imports
+- **Docker**: Multi-stage Dockerfile for build + runtime
+- **License**: MIT
+
 ## Technologies
-NestJS, TypeScript, TypeORM, SQLite/PostgreSQL, JWT, Google OAuth 2.0, Helmet, Throttler
+NestJS, TypeScript, TypeORM, SQLite/PostgreSQL, JWT, Google OAuth 2.0, Helmet, Throttler, Multer, csv-parse

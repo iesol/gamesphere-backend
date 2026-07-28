@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChessMatchState } from './chess-match-state.entity';
@@ -53,10 +53,32 @@ export class ChessService {
   async endMatch(matchId: string, outcome: string) {
     const state = await this.stateRepo.findOne({ where: { matchId } });
     if (!state) throw new ForbiddenException('Match not started');
+
     state.result = outcome;
-    state.isCheckmate = outcome === 'checkmate';
+    state.isCheckmate = outcome === 'checkmate' || outcome === 'white_win' || outcome === 'black_win';
     state.isDraw = outcome === 'draw';
-    return this.stateRepo.save(state);
+    await this.stateRepo.save(state);
+
+    const match = await this.matchRepo.findOne({ where: { id: matchId } });
+    if (!match) throw new NotFoundException('Match not found');
+
+    match.state = MatchState.COMPLETED;
+
+    let winner: string | null = null;
+    if (outcome === 'white_win') {
+      winner = state.whiteTeamId;
+    } else if (outcome === 'black_win') {
+      winner = match.homeTeamId === state.whiteTeamId ? match.awayTeamId : match.homeTeamId;
+    }
+
+    match.result = { winner, outcome };
+    match.scoredBy = null;
+    match.lockedAt = null;
+    await this.matchRepo.save(match);
+
+    this.sse.emit(matchId, { type: 'match_end', data: { outcome, winner }, timestamp: Date.now() });
+
+    return state;
   }
 
   async getState(matchId: string) {
